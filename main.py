@@ -6,13 +6,13 @@ import urllib.parse
 st.set_page_config(page_title="Darija Ad Studio", page_icon="🎬", layout="wide")
 
 # 2. الربط مع Gemini
-try:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-except:
+if "GEMINI_API_KEY" not in st.secrets:
     st.error("Missing API Key in Secrets!")
+else:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# استعملنا gemini-pro حيت هي الأكثر استقراراً دابا
-model = genai.GenerativeModel('gemini-pro')
+# استعملنا هاد النسخة حيت هي اللي خدامة دابا فـ v1beta
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 # 3. الواجهة
 st.title("🎬 Darija Cinematic Ad Studio")
@@ -27,7 +27,7 @@ if generate_btn and user_input:
             output = response.text
             
             if "IMAGE_PROMPT:" in output:
-                script_part = output.split("IMAGE_PROMPT:")[0].replace("SCRIPT:", "").strip()
+                script_part = output.split("IMAGE_PROMPT:")[1].strip() if "SCRIPT:" not in output else output.split("IMAGE_PROMPT:")[0].replace("SCRIPT:", "").strip()
                 image_prompt = output.split("IMAGE_PROMPT:")[1].strip()
             else:
                 script_part, image_prompt = output, user_input
