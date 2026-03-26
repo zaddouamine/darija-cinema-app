@@ -14,11 +14,11 @@ else:
 
 @st.cache_resource
 def get_working_model():
-    # كيجرب يلقى الموديل اللي خدام عندك
-    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-    for m in available_models:
-        if 'flash' in m or 'pro' in m:
-            return genai.GenerativeModel(m)
+    try:
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        for m in models:
+            if 'flash' in m or 'pro' in m: return genai.GenerativeModel(m)
+    except: pass
     return genai.GenerativeModel('gemini-1.5-flash-latest')
 
 model = get_working_model()
@@ -33,23 +33,23 @@ generate_btn = st.sidebar.button("إطلاق الإبداع ✨")
 if generate_btn and user_input:
     with st.spinner('⏳ جاري التحضير...'):
         try:
-            # طلب السكريبت والوصف بطريقة نقية
-            prompt = f"Create a professional Arabic ad script for: '{user_input}'. After the script, write only 'IMAGE_PROMPT: ' and a short English cinematic description. NO BOLD STARS **."
-            response = model.generate_content(prompt)
-            output = response.text
+            # طلب السكريبت
+            res = model.generate_content(f"Create a professional Arabic ad script for: {user_input}. Then write 'IMAGE_PROMPT: ' and a simple 5-word English description of the scene. No symbols or bold.")
+            text = res.text
             
-            if "IMAGE_PROMPT:" in output:
-                script_part = output.split("IMAGE_PROMPT:")[0].strip()
-                image_desc = output.split("IMAGE_PROMPT:")[1].strip()
+            # عزل الوصف
+            if "IMAGE_PROMPT:" in text:
+                script_part = text.split("IMAGE_PROMPT:")[0]
+                image_desc = text.split("IMAGE_PROMPT:")[1]
             else:
-                script_part, image_desc = output, user_input
+                script_part, image_desc = text, user_input
 
-            # تنظيف الوصف من الرموز (هنا السر)
-            clean_desc = re.sub(r'[^a-zA-Z0-9\s]', '', image_desc)
-            encoded_desc = urllib.parse.quote(clean_desc)
+            # تنظيف الوصف من أي حاجة (حتى من الأقواس والنجوم)
+            clean_image_desc = re.sub(r'[^a-zA-Z\s]', '', image_desc).strip()
+            encoded_url = urllib.parse.quote(clean_image_desc)
             
-            # رابط الصورة
-            image_url = f"https://image.pollinations.ai/prompt/{encoded_desc}?width=1024&height=1024&nologo=true"
+            # الرابط الجديد المضمون
+            final_image_url = f"https://pollinations.ai/p/{encoded_url}?width=1024&height=1024&nologo=true"
 
             col1, col2 = st.columns(2)
             with col1:
@@ -57,7 +57,8 @@ if generate_btn and user_input:
                 st.info(script_part)
             with col2:
                 st.subheader("🖼️ المشهد السينمائي")
-                st.image(image_url, use_container_width=True)
+                st.image(final_image_url, use_container_width=True)
+                st.caption(f"Visual: {clean_image_desc}")
 
         except Exception as e:
             st.error(f"Error: {e}")
