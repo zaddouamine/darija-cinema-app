@@ -11,10 +11,19 @@ if "GEMINI_API_KEY" not in st.secrets:
 else:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# هاد السطر هو اللي غيحل المشكل بمرة
-model = genai.GenerativeModel('models/gemini-pro')
+# 3. اختيار الموديل أوتوماتيكياً (هنا فين كاين الحل)
+@st.cache_resource
+def get_working_model():
+    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    # غانختارو أول موديل فيه كلمة 'flash' ولا 'pro'
+    for m in available_models:
+        if 'flash' in m or 'pro' in m:
+            return genai.GenerativeModel(m)
+    return genai.GenerativeModel('gemini-pro') # الاحتياط
 
-# 3. الواجهة
+model = get_working_model()
+
+# 4. الواجهة
 st.title("🎬 Darija Cinematic Ad Studio")
 user_input = st.sidebar.text_area("وصف فكرتك بالدارجة:", height=150)
 generate_btn = st.sidebar.button("إطلاق الإبداع ✨")
@@ -22,19 +31,17 @@ generate_btn = st.sidebar.button("إطلاق الإبداع ✨")
 if generate_btn and user_input:
     with st.spinner('⏳ جاري التحضير...'):
         try:
-            # طلب السكريبت والتصويرة
             prompt = f"Translate and expand this Darija concept: '{user_input}' into a professional Arabic ad script and provide an English cinematic image prompt. Format: SCRIPT: [text] IMAGE_PROMPT: [text]"
             response = model.generate_content(prompt)
             output = response.text
             
-            # تقسيم النتيجة
             if "IMAGE_PROMPT:" in output:
-                script_part = output.split("IMAGE_PROMPT:")[0].replace("SCRIPT:", "").strip()
-                image_prompt = output.split("IMAGE_PROMPT:")[1].strip()
+                parts = output.split("IMAGE_PROMPT:")
+                script_part = parts[0].replace("SCRIPT:", "").strip()
+                image_prompt = parts[1].strip()
             else:
                 script_part, image_prompt = output, user_input
 
-            # العرض
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("📝 سكريبت الإعلان")
