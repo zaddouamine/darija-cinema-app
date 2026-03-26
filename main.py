@@ -11,8 +11,8 @@ if "GEMINI_API_KEY" not in st.secrets:
 else:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# استعملنا هاد النسخة حيت هي اللي خدامة دابا فـ v1beta
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+# هاد السطر هو اللي غيحل المشكل بمرة
+model = genai.GenerativeModel('models/gemini-pro')
 
 # 3. الواجهة
 st.title("🎬 Darija Cinematic Ad Studio")
@@ -22,16 +22,19 @@ generate_btn = st.sidebar.button("إطلاق الإبداع ✨")
 if generate_btn and user_input:
     with st.spinner('⏳ جاري التحضير...'):
         try:
+            # طلب السكريبت والتصويرة
             prompt = f"Translate and expand this Darija concept: '{user_input}' into a professional Arabic ad script and provide an English cinematic image prompt. Format: SCRIPT: [text] IMAGE_PROMPT: [text]"
             response = model.generate_content(prompt)
             output = response.text
             
+            # تقسيم النتيجة
             if "IMAGE_PROMPT:" in output:
-                script_part = output.split("IMAGE_PROMPT:")[1].strip() if "SCRIPT:" not in output else output.split("IMAGE_PROMPT:")[0].replace("SCRIPT:", "").strip()
+                script_part = output.split("IMAGE_PROMPT:")[0].replace("SCRIPT:", "").strip()
                 image_prompt = output.split("IMAGE_PROMPT:")[1].strip()
             else:
                 script_part, image_prompt = output, user_input
 
+            # العرض
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("📝 سكريبت الإعلان")
