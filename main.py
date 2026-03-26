@@ -11,7 +11,8 @@ try:
 except:
     st.error("Missing API Key in Secrets!")
 
-model = genai.GenerativeModel('gemini-1.5-flash')
+# استعملنا gemini-pro حيت هي الأكثر استقراراً دابا
+model = genai.GenerativeModel('gemini-pro')
 
 # 3. الواجهة
 st.title("🎬 Darija Cinematic Ad Studio")
@@ -41,4 +42,3 @@ if generate_btn and user_input:
                 st.image(f"https://image.pollinations.ai/prompt/{clean_p}?width=1024&height=1024&nologo=true")
         except Exception as e:
             st.error(f"Error: {e}")
-
